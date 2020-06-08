@@ -1,6 +1,6 @@
 const express = require('express');
-const axios = require('axios');
 const moment = require('moment');
+const BuenbitService = require('./services');
 
 var app = express();
 
@@ -12,27 +12,11 @@ const saveBillChallege = (dollarToDai, daisToArs) => table.push({
   daisToArs,
 });
 
-const getData = () => {
-  axios.get("https://be.buenbit.com/api/market/tickers/")
-    .then(response => {
-      const {
-        object: {
-          daiars:{ purchase_price: purchase_price_daiars },
-          daiusd:{ selling_price: selling_price_daiusd }
-        }
-      } = response.data;
-      const dollars = 100;
-      const dollarToDai = dollars / selling_price_daiusd;
-      const daisToArs = dollarToDai * purchase_price_daiars;
-      saveBillChallege(dollarToDai, daisToArs);
-    })
-    .catch(err => console.log(err));
-}
-
-
-const time = 1000 * 60 * 5;
-getData();
-setInterval(getData, time);
+const service = new BuenbitService();
+const TIME = 1000 * 60 * 5;
+service.getData().then(({ dollarToDai, daisToArs }) => saveBillChallege(dollarToDai, daisToArs))
+setInterval(
+  () => service.getData().then(({ dollarToDai, daisToArs }) => saveBillChallege(dollarToDai, daisToArs)), TIME);
 
 app.get('/', (req, res) => {
   res.json(table);
